@@ -225,7 +225,7 @@ class tetrisData():
                 piece.pieceShape = shape
 
             if loc == None:
-                piece.piece_x = rand(self.config['cols'] - len(piece.pieceShape[0]))
+                piece.piece_x = rand(self.config['cols'] - (len(piece.pieceShape[0])-1))
             else:
                 piece.piece_x = loc
             

@@ -638,13 +638,13 @@ class PieceControllerTests(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_testAttemptAddMultipiece_1(self):
-        testBoard = tetrisBoard({'cols':4})
+        testBoard = tetrisBoard({'cols':5})
         testPiece_1 = tetrisPiece()
-        testData = tetrisData({'cols':4, 'numPieces':2})
+        testData = tetrisData({'cols':5, 'numPieces':2})
         testBoard.board = [
-            [0,0,0,0],
-            [0,0,0,0],
-            [0,0,0,0]
+            [0,0,0,0,0],
+            [0,0,0,0,0],
+            [0,0,0,0,0]
         ]
         testData.currentBoard = testBoard
         expected = True
