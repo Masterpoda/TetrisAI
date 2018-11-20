@@ -592,7 +592,13 @@ class tetrisGame():
                 
                 if command == 'DOWN' and not self.controller.possibleMoves['DOWN']:
                     #land piece
-                    self.gameData.landPiece(piece)
+                    #keeps pieces from landing because of downward facing multi-piece collision
+                    if self.config['numPieces'] > 1:
+                        self.controller.getMoves(piece, self.gameData.currentBoard)
+                        if not self.controller.possibleMoves['DOWN']:
+                            self.gameData.landPiece(piece)
+                    else:
+                        self.gameData.landPiece(piece)
                 else:
                     self.controller.applyMove(piece, self.gameData.currentBoard, command)
 
