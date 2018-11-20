@@ -208,7 +208,7 @@ class TetrisBoardTests(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
-    def test_testGenerateCollisionBoard(self):
+    def test_testGenerateCollisionBoard_1(self):
         testPiece_1 = tetrisPiece()
         testPiece_2 = tetrisPiece()
         testPiece_3 = tetrisPiece()
@@ -236,6 +236,46 @@ class TetrisBoardTests(unittest.TestCase):
             [0,3,0],
             [0,0,5],
             [1,2,0]
+            ]
+
+        actual = testData.currentBoard.generateCollisionList(testData.pieceList)
+
+        self.assertEqual(actual, expected)
+
+    def test_testGenerateCollisionBoard_2(self):
+        testData = tetrisData()
+        testBoard = tetrisBoard({'cols':3})
+        testPiece_1 = tetrisPiece(0, [[1, 2]])
+        testBoard.board = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+            ]
+        testData.currentBoard = testBoard
+        testData.pieceList.append(testPiece_1)
+        expected = [
+            [1,2,0],
+            [0,0,0],
+            [0,0,0]
+            ]
+
+        actual = testData.currentBoard.generateCollisionList(testData.pieceList)
+
+        self.assertEqual(actual, expected)
+
+    def test_testGenerateCollisionBoard_3(self):
+        testData = tetrisData()
+        testBoard = tetrisBoard({'cols':3})
+        testBoard.board = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+            ]
+        testData.currentBoard = testBoard
+        expected = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
             ]
 
         actual = testData.currentBoard.generateCollisionList(testData.pieceList)

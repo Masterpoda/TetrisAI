@@ -152,7 +152,12 @@ class tetrisBoard():
     #takes piece, along with list of all pieces
     def checkCollisionOffsetMultiPiece(self, piece, pieceList, x_offs, y_offs):
         self.generateCollisionList(pieceList)
-        self.collList = self.join_matrixes(self.collList, piece.negatePiece(), (piece.piece_x, piece.piece_y))
+
+        #remove piece from collision map if it would have been factored in
+        if piece in pieceList:
+            self.collList = self.join_matrixes(self.collList, piece.negatePiece(), (piece.piece_x, piece.piece_y))
+
+        #check collision against the generated list
         return self.checkCollisionGivenBoard(piece.pieceShape, self.collList, (x_offs+piece.piece_x, y_offs+piece.piece_y))
        
 
@@ -232,7 +237,6 @@ class tetrisData():
             piece.piece_y = 0
 
             if self.config['numPieces'] > 1:
-                print("Attempting to add ", piece.pieceShape, " at ", piece.piece_x, " ", piece.piece_y, " in ", self.currentBoard.board)
                 if self.currentBoard.checkCollisionOffsetMultiPiece(piece, self.pieceList, 0, 0):
                     if len(self.pieceList) == 0:
                         return False #piece cannot be placed
