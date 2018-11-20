@@ -321,7 +321,7 @@ class TetrisBoardTests(unittest.TestCase):
         testPiece_1 = tetrisPiece()
         testPiece_2 = tetrisPiece()
         testBoard = tetrisBoard({'cols':4})
-        testData = tetrisData
+        testData = tetrisData()
         testBoard.board = [
             [0,0,0,0],
             [0,0,0,0],
@@ -345,7 +345,7 @@ class TetrisBoardTests(unittest.TestCase):
         testPiece_1 = tetrisPiece()
         testPiece_2 = tetrisPiece()
         testBoard = tetrisBoard({'cols':4})
-        testData = tetrisData
+        testData = tetrisData()
         testBoard.board = [
             [0,0,0,0],
             [0,0,0,0],
@@ -369,7 +369,7 @@ class TetrisBoardTests(unittest.TestCase):
         testPiece_1 = tetrisPiece()
         testPiece_2 = tetrisPiece()
         testBoard = tetrisBoard({'cols':4})
-        testData = tetrisData
+        testData = tetrisData()
         testBoard.board = [
             [0,0,0,0],
             [0,0,0,0],
@@ -391,7 +391,7 @@ class TetrisBoardTests(unittest.TestCase):
     def test_testCheckCollisionOffsetMultiPiece_4(self):
         testPiece_1 = tetrisPiece()
         testBoard = tetrisBoard({'cols':4})
-        testData = tetrisData
+        testData = tetrisData()
         testBoard.board = [
             [0,0,0,0],
             [0,0,0,0],
@@ -410,7 +410,7 @@ class TetrisBoardTests(unittest.TestCase):
     def test_testCheckCollisionOffsetMultiPiece_5(self):
         testPiece_1 = tetrisPiece()
         testBoard = tetrisBoard({'cols':4})
-        testData = tetrisData
+        testData = tetrisData()
         testBoard.board = [
             [0,0,0,0],
             [0,0,0,0],
@@ -637,14 +637,33 @@ class PieceControllerTests(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
-    def test_testApplyMoveMultipiece(self):
-        testBoard = tetrisBoard({'cols':3})
-        testPiece_1 = tetrisPiece(0, [[1,1,1]])
-        testData = tetrisData({'cols':3, 'numPieces':2})
+    def test_testAttemptAddMultipiece_1(self):
+        testBoard = tetrisBoard({'cols':4})
+        testPiece_1 = tetrisPiece()
+        testData = tetrisData({'cols':4, 'numPieces':2})
         testBoard.board = [
-            [0,0,0],
-            [0,0,0],
-            [0,0,0]]
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0]
+        ]
+        testData.currentBoard = testBoard
+        expected = True
+
+
+        print("F1")
+        actual = testData.attemptAddPiece()    
+
+        self.assertEqual(expected, actual)
+
+    def test_testAttemptAddMultipiece_2(self):
+        testBoard = tetrisBoard({'cols':4})
+        testPiece_1 = tetrisPiece(0, [[1,1,1]])
+        testData = tetrisData({'cols':4, 'numPieces':2})
+        testBoard.board = [
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0]
+        ]
         testData.currentBoard = testBoard
         testData.attemptAddPiece(testPiece_1.pieceShape, testPiece_1.piece_x)
 
@@ -656,7 +675,7 @@ class PieceControllerTests(unittest.TestCase):
 
         self.assertEqual(expected, actual)
     
-    def test_testApplyMoveMultipiece_2(self):
+    def test_testAttemptAddMultipiece_3(self):
         testBoard = tetrisBoard({'cols':4})
         testData = tetrisData({'cols':4, 'numPieces':2})
         testBoard.board = [

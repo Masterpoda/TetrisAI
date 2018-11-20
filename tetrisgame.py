@@ -204,10 +204,11 @@ class tetrisData():
     def __init__(self, config = None):
         if config != None:
             self.config = config
+        else:
+            self.config = default_config
         
         self.currentBoard = tetrisBoard(self.config)
         self.pieceList = list()
-        self.config = default_config
         self.score = 0
     
     def landPiece(self, piece):
@@ -224,13 +225,14 @@ class tetrisData():
                 piece.pieceShape = shape
 
             if loc == None:
-                piece.piece_x = rand(self.config['cols'])
+                piece.piece_x = rand(self.config['cols'] - len(piece.pieceShape[0]))
             else:
                 piece.piece_x = loc
             
             piece.piece_y = 0
 
             if self.config['numPieces'] > 1:
+                print("Attempting to add ", piece.pieceShape, " at ", piece.piece_x, " ", piece.piece_y, " in ", self.currentBoard.board)
                 if self.currentBoard.checkCollisionOffsetMultiPiece(piece, self.pieceList, 0, 0):
                     if len(self.pieceList) == 0:
                         return False #piece cannot be placed
