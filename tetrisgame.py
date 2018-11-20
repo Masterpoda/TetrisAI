@@ -159,7 +159,6 @@ class tetrisBoard():
 
         #check collision against the generated list
         return self.checkCollisionGivenBoard(piece.pieceShape, self.collList, (x_offs+piece.piece_x, y_offs+piece.piece_y))
-       
 
     def checkCollisionGivenBoard(self, pieceShape, board, offset):
         offsX = offset[0]
@@ -176,8 +175,17 @@ class tetrisBoard():
         return False
 
     #stores and returns a list of all collision blocks (Only needed for multiple pieces)
-    def generateCollisionList(self, pieceList):
-        self.collList = self.board.copy()
+    def generateCollisionList(self, pieceList = None):
+
+        self.collList = [[0 for col in range(len(self.board[0]))] for row in range(len(self.board))]
+
+        for y, row in enumerate(self.collList):
+            for x, item in enumerate(row):
+                self.collList[y][x] += self.board[y][x]
+
+        if pieceList == None:
+            pieceList = self.pieceList
+
         for piece in pieceList:
             self.collList = self.join_matrixes(self.collList, piece.pieceShape, (piece.piece_x, piece.piece_y))
         
@@ -241,7 +249,8 @@ class tetrisData():
                     if len(self.pieceList) == 0:
                         return False #piece cannot be placed
                 else:
-                    print("adding piece at " + str(piece.piece_x))
+                    print("adding piece at " , piece.piece_x)
+                    self.printListBoard()
                     self.pieceList.append(piece)
             else:
                 if self.currentBoard.checkCollision(piece):
@@ -280,6 +289,12 @@ class tetrisData():
             tempBoard = self.currentBoard.join_matrixes(tempBoard, piece.pieceShape, (piece.piece_x, piece.piece_y))
         
         return tempBoard
+    
+    def printListBoard(self):
+        listBoard = self.generateListBoard()
+        for row in listBoard:
+            print(row)
+        print('\n\n')
         
 #draws tetris game and relevant info
 class tetrisView():
@@ -535,7 +550,7 @@ class tetrisGame():
     def advanceGame(self):
 
         #add/replenish pieces
-        self.gameOver = self.gameData.attemptAddPiece(None, int(self.config['cols'] / 2))
+        self.gameOver = self.gameData.attemptAddPiece(None, None)
 
         #display game state, or metrics if AI is running.
         if self.display:
@@ -552,15 +567,10 @@ class tetrisGame():
         self.gameData.score += self.gameData.decodeScore(self.gameData.currentBoard.checkRows())
      
     def displayGame(self):
+        self.gameData.printListBoard()
         self.view.drawCurrentGame(self.gameData)
         pygame.display.update()
         self.dont_burn_my_cpu.tick(self.config['maxfps'])
-        """
-        textBoard = self.gameData.generateListBoard()
-        for line in textBoard:
-            print(line)
-        print("\n\n")
-        """
 
     def movePieces(self):
         for piece in self.gameData.pieceList:

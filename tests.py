@@ -281,6 +281,29 @@ class TetrisBoardTests(unittest.TestCase):
         actual = testData.currentBoard.generateCollisionList(testData.pieceList)
 
         self.assertEqual(actual, expected)
+    
+    def test_testGenerateCollisionBoard_4(self):
+        #ensure collision list does not mutate board
+        testData = tetrisData()
+        testBoard = tetrisBoard({'cols':3})
+        testPiece = tetrisPiece(0, [[1,1,1]])
+        testData.pieceList.append(testPiece)
+        testBoard.board = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+            ]
+        testData.currentBoard = testBoard
+        expected = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+            ]
+
+        testData.currentBoard.generateCollisionList(testData.pieceList)
+        actual = testBoard.board
+
+        self.assertEqual(actual, expected)
 
     def test_testGenerateCheckCollisionGivenBoard(self):
         testBoard = tetrisBoard()
@@ -680,7 +703,7 @@ class PieceControllerTests(unittest.TestCase):
     def test_testAttemptAddMultipiece_1(self):
         testBoard = tetrisBoard({'cols':5})
         testPiece_1 = tetrisPiece()
-        testData = tetrisData({'cols':5, 'numPieces':2})
+        testData = tetrisData({'cols':5, 'rows':3, 'numPieces':2})
         testBoard.board = [
             [0,0,0,0,0],
             [0,0,0,0,0],
@@ -698,7 +721,7 @@ class PieceControllerTests(unittest.TestCase):
     def test_testAttemptAddMultipiece_2(self):
         testBoard = tetrisBoard({'cols':4})
         testPiece_1 = tetrisPiece(0, [[1,1,1]])
-        testData = tetrisData({'cols':4, 'numPieces':2})
+        testData = tetrisData({'cols':4, 'rows':3, 'numPieces':2})
         testBoard.board = [
             [0,0,0,0],
             [0,0,0,0],
@@ -717,7 +740,7 @@ class PieceControllerTests(unittest.TestCase):
     
     def test_testAttemptAddMultipiece_3(self):
         testBoard = tetrisBoard({'cols':4})
-        testData = tetrisData({'cols':4, 'numPieces':2})
+        testData = tetrisData({'cols':4, 'rows':3, 'numPieces':2})
         testBoard.board = [
             [0,0,0,0],
             [0,0,0,0],
