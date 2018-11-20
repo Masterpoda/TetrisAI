@@ -4,11 +4,11 @@ from random import randrange as rand
 
 default_config = {
 	'cell_size':	15,
-	'cols':		    30,
-	'rows':		    40,
+	'cols':		    16,
+	'rows':		    20,
 	'delay':	    750,
 	'maxfps':	    30,
-    'numPieces':    2
+    'numPieces':    5
     }
 
 colors = [
@@ -590,5 +590,5 @@ class tetrisGame():
         self.gameData = tetrisData()
         self.gameOver = False
 
-#testGame = tetrisGame()
-#testGame.run()
+testGame = tetrisGame()
+testGame.run()
