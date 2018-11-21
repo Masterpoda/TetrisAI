@@ -1,14 +1,15 @@
-import pygame, sys
+import sys
+import pygame
 import copy
 from random import randrange as rand
 
 default_config = {
-	'cell_size':	15,
-	'cols':		    16,
+	'cell_size':	10,
+	'cols':		    5,
 	'rows':		    20,
 	'delay':	    750,
 	'maxfps':	    30,
-    'numPieces':    5
+    'numPieces':    80
     }
 
 colors = [
@@ -84,6 +85,7 @@ class tetrisBoard():
 
     board = []
     collList = []
+    regenerateCollList = True
 
     config = default_config
 
@@ -151,11 +153,12 @@ class tetrisBoard():
 
     #takes piece, along with list of all pieces
     def checkCollisionOffsetMultiPiece(self, piece, pieceList, x_offs, y_offs):
-        self.generateCollisionList(pieceList)
+        if self.regenerateCollList:
+            self.generateCollisionList(pieceList)
 
         #remove piece from collision map if it would have been factored in
-        if piece in pieceList:
-            self.collList = self.join_matrixes(self.collList, piece.negatePiece(), (piece.piece_x, piece.piece_y))
+            if piece in pieceList:
+                self.collList = self.join_matrixes(self.collList, piece.negatePiece(), (piece.piece_x, piece.piece_y))
 
         #check collision against the generated list
         return self.checkCollisionGivenBoard(piece.pieceShape, self.collList, (x_offs+piece.piece_x, y_offs+piece.piece_y))
@@ -195,8 +198,12 @@ class tetrisBoard():
         return self.checkCollisionMatrix(piece.rotateClockwise(), (piece.piece_x, piece.piece_y))
 
     def checkCollisionRotateMultipiece(self, piece, pieceList):
-        self.generateCollisionList(pieceList)
-        self.collList = self.join_matrixes(self.collList, piece.negatePiece(), (0,0))
+        if self.regenerateCollList:
+            self.generateCollisionList(pieceList)
+
+            if piece in pieceList:
+                self.collList = self.join_matrixes(self.collList, piece.negatePiece(), (piece.piece_x, piece.piece_y))
+
         return self.checkCollisionGivenBoard(piece.rotateClockwise(), self.collList, (piece.piece_x, piece.piece_y))
         
     def setBoardToColor(self):
@@ -249,8 +256,6 @@ class tetrisData():
                     if len(self.pieceList) == 0:
                         return False #piece cannot be placed
                 else:
-                    print("adding piece at " , piece.piece_x)
-                    self.printListBoard()
                     self.pieceList.append(piece)
             else:
                 if self.currentBoard.checkCollision(piece):
@@ -339,12 +344,20 @@ class tetrisView():
                         pygame.Rect(x * self.config['cell_size'] + self.boardMargin, 
                                     y * self.config['cell_size'] + self.boardMargin, 
                                     self.config['cell_size'], self.config['cell_size']) ,0)
-                    pygame.draw.rect(
-                        self.screen,
-                        colors[8],
-                        pygame.Rect(x * self.config['cell_size'] + self.boardMargin, 
-                                    y * self.config['cell_size'] + self.boardMargin, 
-                                    self.config['cell_size'], self.config['cell_size']) ,1)
+                    if self.config['cell_size'] > 4:
+                        pygame.draw.rect(
+                            self.screen,
+                            colors[8],
+                            pygame.Rect( x * self.config['cell_size'] + self.boardMargin, 
+                                        y * self.config['cell_size'] + self.boardMargin, 
+                                        self.config['cell_size'], self.config['cell_size']) ,1)
+                    if self.config['cell_size'] > 6:
+                        pygame.draw.rect(
+                            self.screen,
+                            colors[0],
+                            pygame.Rect( x * self.config['cell_size'] + self.boardMargin+1, 
+                                        y * self.config['cell_size'] + self.boardMargin+1, 
+                                        self.config['cell_size']-2, self.config['cell_size']-2) ,1)
 
     def drawBorder(self, currentData):
         pygame.draw.line(self.screen, colors[8], self.borderTopRight, self.borderTopLeft , 1)
@@ -396,12 +409,20 @@ class tetrisView():
                         pygame.Rect( (x + piece.piece_x) * self.config['cell_size'] + self.boardMargin, 
                                      (y + piece.piece_y) * self.config['cell_size'] + self.boardMargin, 
                                      self.config['cell_size'], self.config['cell_size']) ,0)
-                    pygame.draw.rect(
-                        self.screen,
-                        colors[8],
-                        pygame.Rect( (x + piece.piece_x) * self.config['cell_size'] + self.boardMargin, 
-                                     (y + piece.piece_y) * self.config['cell_size'] + self.boardMargin, 
-                                     self.config['cell_size'], self.config['cell_size']) ,1)
+                    if self.config['cell_size'] > 4:
+                        pygame.draw.rect(
+                            self.screen,
+                            colors[8],
+                            pygame.Rect( (x + piece.piece_x) * self.config['cell_size'] + self.boardMargin, 
+                                        (y + piece.piece_y) * self.config['cell_size'] + self.boardMargin, 
+                                        self.config['cell_size'], self.config['cell_size']) ,1)
+                    if self.config['cell_size'] > 6:
+                        pygame.draw.rect(
+                            self.screen,
+                            colors[0],
+                            pygame.Rect( (x + piece.piece_x) * self.config['cell_size'] + self.boardMargin+1, 
+                                        (y + piece.piece_y) * self.config['cell_size'] + self.boardMargin+1, 
+                                        self.config['cell_size']-2, self.config['cell_size']-2) ,1)
     
 #issues commands to each piece
 class pieceController():
@@ -435,11 +456,15 @@ class pieceController():
 
     def getMovesMultipiece(self, piece, pieceList, board):
         moves = dict()
+
+        #Only need to generate collision list on first offset check.
+        board.regenerateCollList = True
         if not board.checkCollisionOffsetMultiPiece(piece, pieceList, 1, 0):
             moves['RIGHT'] = True
         else:
             moves['RIGHT'] = False
 
+        board.regenerateCollList = False
         if not board.checkCollisionOffsetMultiPiece(piece, pieceList, -1, 0):
             moves['LEFT'] = True
         else:
@@ -454,6 +479,8 @@ class pieceController():
             moves['UP'] = True
         else:
             moves['UP'] = False
+
+        board.regenerateCollList = True
 
         self.possibleMoves = moves
         return moves
@@ -522,8 +549,8 @@ class moveProvider():
                                 return key
                         elif event.type == pygame.QUIT:
                             sys.quit()
-
-        return self.AIActions[rand(4)]
+        action = self.AIActions[rand(4)]
+        return action
 
 #Manages progression of entire game
 class tetrisGame():
@@ -567,7 +594,6 @@ class tetrisGame():
         self.gameData.score += self.gameData.decodeScore(self.gameData.currentBoard.checkRows())
      
     def displayGame(self):
-        self.gameData.printListBoard()
         self.view.drawCurrentGame(self.gameData)
         pygame.display.update()
         self.dont_burn_my_cpu.tick(self.config['maxfps'])
@@ -589,7 +615,7 @@ class tetrisGame():
                     self.controller.getMovesMultipiece(piece, self.gameData.pieceList, self.gameData.currentBoard)
                 else:
                     self.controller.getMoves(piece, self.gameData.currentBoard)
-                
+
                 if command == 'DOWN' and not self.controller.possibleMoves['DOWN']:
                     #land piece
                     #keeps pieces from landing because of downward facing multi-piece collision
@@ -602,9 +628,78 @@ class tetrisGame():
                 else:
                     self.controller.applyMove(piece, self.gameData.currentBoard, command)
 
+    #only used for AI projections of pieces
+    def drop(self):
+        for piece in self.gameData.pieceList:
+            if self.config['numPieces'] > 1:
+                self.controller.getMovesMultipiece(piece, self.gameData.pieceList, self.gameData.currentBoard)
+            else:
+                self.controller.getMoves(piece, self.gameData.currentBoard)
+            
+            if not self.controller.possibleMoves['DOWN']:
+                #land piece
+                #keeps pieces from landing because of downward facing multi-piece collision
+                if self.config['numPieces'] > 1:
+                    self.controller.getMoves(piece, self.gameData.currentBoard)
+                    if not self.controller.possibleMoves['DOWN']:
+                        self.gameData.landPiece(piece)
+                else:
+                    self.gameData.landPiece(piece)
+            else:
+                self.controller.applyMove(piece, self.gameData.currentBoard, 'DOWN')
+                
+            
+
     def resetGame(self):
         self.gameData = tetrisData()
         self.gameOver = False
+
+class evaluator():
+    currentSef = 0
+
+    currentData = []
+
+    def __init__(self, sef = None, tData = None):
+        if sef != None:
+            self.currentSef = sef
+        if tData != None:
+            self.currentData = tData
+
+    def evaluate(self, tData = None):
+        sefs = {
+            0 : self.sef0(),
+            1 : self.sef1()
+        }
+
+        if tData == None:
+            self.currentData = tData
+
+        return sefs[self.currentSef]
+
+    #return a duplicate of the gameboard where every piece is projected downward
+    def projectPieces(self):
+        tempGame = tetrisGame(self.currentData.config)
+        tempGame.manual = True
+        tempGame.display = False
+        tempGame.gameData = copy.deepcopy(self.currentData)
+        while tempGame.gameData.pieceList != []:
+            tempGame.drop()
+
+        return tempGame.gameData.currentBoard.board
+
+    #Board height
+    def sef0(self):
+        height = 0
+        for row in reversed(self.currentData.currentBoard.board):
+            if all(val == 0 for val in row):
+                return height
+            else:
+                height += 1
+        return height
+    
+    def sef1(self):
+        self.currentData.currentBoard.board = self.projectPieces()
+        return self.sef0()
 
 testGame = tetrisGame()
 testGame.run()
