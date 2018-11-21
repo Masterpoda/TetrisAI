@@ -772,51 +772,77 @@ class PieceControllerTests(unittest.TestCase):
         self.assertEqual(expected, actual)
 
 class staticEvaluationFunctionTest(unittest.TestCase):
-    def test_testSEF0_1(self):
-        testData = tetrisData()
+    def test_testProjectPieces_1(self):
+        testData = tetrisData({'cols':4, 'numPieces':2})
+        testPiece_1 = tetrisPiece(0, [[1,0],[1,1]])
+        testPiece_2 = tetrisPiece(3, [[1],[1]])
+        testData.pieceList = [testPiece_1, testPiece_2]
         testBoard = [
-            [0,0,0],
-            [0,0,0],
-            [0,1,0],
-            [1,1,0]
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0]
         ]
         testData.currentBoard.board = testBoard
-        expected = 2
+        expected = [
+            [0,0,0,0],
+            [0,0,0,0],
+            [1,0,0,1],
+            [1,1,0,1]
+        ]
+        testEvaluator = evaluator(1, testData)
 
-        testEvaluator = evaluator(0, testData)
-        actual = testEvaluator.evaluate()
+        actual = testEvaluator.projectPieces()
 
         self.assertEqual(expected, actual)
 
-    def test_testSEF0_2(self):
-        testData = tetrisData()
+    def test_testProjectPieces_2(self):
+        testData = tetrisData({'cols':4, 'numPieces':2})
+        testPiece_1 = tetrisPiece(0, [[1,0],[1,1]])
+        testPiece_2 = tetrisPiece(3, [[1],[1]])
+        testData.pieceList = [testPiece_1, testPiece_2]
         testBoard = [
-            [0,0,0],
-            [0,0,0],
-            [0,0,0],
-            [0,0,0]
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0]
         ]
         testData.currentBoard.board = testBoard
-        expected = 0
-
+        expected = copy.deepcopy(testData).currentBoard.board
         testEvaluator = evaluator(0, testData)
-        actual = testEvaluator.evaluate()
+        
+
+        testEvaluator.projectPieces()
+        actual = testEvaluator.currentData.currentBoard.board
 
         self.assertEqual(expected, actual)
 
-    def test_testSEF0_3(self):
-        testData = tetrisData()
+    def test_testProjectPieces_3(self):
+        testData = tetrisData({'cols':6, 'numPieces':2})
+        testPiece_1 = tetrisPiece(0, [[1,0],[1,1],[1,0]])
+        testPiece_2 = tetrisPiece(1, [[2,2],[0,2]])
+        testPiece_2.piece_y = 3
+        testData.pieceList = [testPiece_1, testPiece_2]
         testBoard = [
-            [1,0,0],
-            [1,0,0],
-            [1,0,0],
-            [1,0,0]
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0]
         ]
         testData.currentBoard.board = testBoard
-        expected = 4
-
+        expected = [
+            [0,0,0,0],
+            [0,0,0,0],
+            [1,0,0,0],
+            [1,1,0,0],
+            [1,2,2,0],
+            [0,0,2,0]
+        ]
         testEvaluator = evaluator(0, testData)
-        actual = testEvaluator.evaluate()
+        
+        actual = testEvaluator.projectPieces()
 
         self.assertEqual(expected, actual)
 
@@ -838,16 +864,14 @@ class staticEvaluationFunctionTest(unittest.TestCase):
 
     def test_testSEF1_2(self):
         testData = tetrisData()
-        testpiece_1 = tetrisPiece(0, [[1,1]])
         testBoard = [
             [0,0,0],
             [0,0,0],
-            [0,1,0],
-            [1,1,0]
+            [0,0,0],
+            [0,0,0]
         ]
         testData.currentBoard.board = testBoard
-        testData.pieceList = [testpiece_1]
-        expected = 3
+        expected = 0
 
         testEvaluator = evaluator(1, testData)
         actual = testEvaluator.evaluate()
@@ -856,17 +880,13 @@ class staticEvaluationFunctionTest(unittest.TestCase):
 
     def test_testSEF1_3(self):
         testData = tetrisData()
-        testpiece_1 = tetrisPiece(0, [[1]])
-        testpiece_2 = tetrisPiece(2, [[1],[1],[1],[1]])
         testBoard = [
-            [0,0,0],
-            [0,0,0],
-            [0,0,0],
-            [0,1,0],
-            [1,1,0]
+            [1,0,0],
+            [1,0,0],
+            [1,0,0],
+            [1,0,0]
         ]
         testData.currentBoard.board = testBoard
-        testData.pieceList = [testpiece_1, testpiece_2]
         expected = 4
 
         testEvaluator = evaluator(1, testData)
@@ -874,55 +894,87 @@ class staticEvaluationFunctionTest(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
-    def test_testProjectPieces_1(self):
-        testData = tetrisData({'cols':4, 'numPieces':2})
-        testPiece_1 = tetrisPiece(0, [[1,0],[1,1]])
-        testPiece_2 = tetrisPiece(3, [[1],[1]])
-        testData.pieceList = [testPiece_1, testPiece_2]
+    def test_testSEF2_1(self):
+        testData = tetrisData({'rows':4})
         testBoard = [
-            [0,0,0,0],
-            [0,0,0,0],
-            [0,0,0,0],
-            [0,0,0,0]
+            [0,0,0],
+            [0,0,0],
+            [0,1,0],
+            [1,1,0]
         ]
         testData.currentBoard.board = testBoard
-        expected = [
-            [0,0,0,0],
-            [0,0,0,0],
-            [1,0,0,1],
-            [1,1,0,1]
-        ]
-        testEvaluator = evaluator(0, testData)
+        expected = 3
 
-        actual = testEvaluator.projectPieces()
+        testEvaluator = evaluator(2, testData)
+        actual = testEvaluator.evaluate()
 
         self.assertEqual(expected, actual)
 
-    def test_testProjectPieces_2(self):
-        testData = tetrisData({'cols':4, 'numPieces':2})
-        testPiece_1 = tetrisPiece(0, [[1,0],[1,1]])
-        testPiece_2 = tetrisPiece(3, [[1],[1]])
-        testData.pieceList = [testPiece_1, testPiece_2]
+    def test_testSEF3_1(self):
+        testData = tetrisData({'rows':4})
         testBoard = [
-            [0,0,0,0],
-            [0,0,0,0],
-            [0,0,0,0],
-            [0,0,0,0]
+            [0,0,0],
+            [0,0,0],
+            [1,1,1],
+            [1,1,0]
         ]
         testData.currentBoard.board = testBoard
-        expected = [
-            [0,0,0,0],
-            [0,0,0,0],
-            [1,0,0,1],
-            [1,1,0,1]
-        ]
-        expected = copy.deepcopy(testData).currentBoard.board
-        testEvaluator = evaluator(0, testData)
-        
+        expected = 1
 
-        testEvaluator.projectPieces()
-        actual = testEvaluator.currentData.currentBoard.board
+        testEvaluator = evaluator(3, testData)
+        actual = testEvaluator.evaluate()
 
         self.assertEqual(expected, actual)
 
+    def test_testSEF4_1(self):
+        testData = tetrisData()
+        testBoard = [
+            [0,0,0],
+            [0,0,0],
+            [1,1,1],
+            [1,1,0]
+        ]
+        testData.currentBoard.board = testBoard
+        expected = 1
+
+        testEvaluator = evaluator(4, testData)
+        actual = testEvaluator.evaluate()
+
+        self.assertEqual(expected, actual)
+
+    def test_testSEF4_2(self):
+        testData = tetrisData()
+        testBoard = [
+            [0,0,0],
+            [1,0,0],
+            [0,1,0],
+            [1,0,1],
+            [1,0,0]
+        ]
+        testData.currentBoard.board = testBoard
+        expected = 4
+
+        testEvaluator = evaluator(4, testData)
+        actual = testEvaluator.evaluate()
+
+        self.assertEqual(expected, actual)
+
+    def test_testSEF5_2(self):
+        testData = tetrisData()
+        testBoard = [
+            [0,0,0],
+            [1,0,0],
+            [0,1,0],
+            [1,0,1],
+            [1,0,0]
+        ]
+        testData.currentBoard.board = testBoard
+        expected = 6
+
+        testEvaluator = evaluator(5, testData)
+        actual = testEvaluator.evaluate()
+
+        self.assertEqual(expected, actual)
+
+    
 unittest.main()

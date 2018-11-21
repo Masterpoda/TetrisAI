@@ -668,11 +668,16 @@ class evaluator():
     def evaluate(self, tData = None):
         sefs = {
             0 : self.sef0(),
-            1 : self.sef1()
+            1 : self.sef1(),
+            2 : self.sef2(),
+            3 : self.sef3(),
+            4 : self.sef4(),
+            5 : self.sef5()
         }
 
         if tData == None:
             self.currentData = tData
+
 
         return sefs[self.currentSef]
 
@@ -687,8 +692,13 @@ class evaluator():
 
         return tempGame.gameData.currentBoard.board
 
-    #Board height
+    #amalgam of sefs with projected pieces and weighted combinations
     def sef0(self):
+        self.currentData.currentBoard.board = self.projectPieces()
+        return self.sef2() * -0.510066 + self.sef3() * 0.760666
+
+    #Board height
+    def sef1(self):
         height = 0
         for row in reversed(self.currentData.currentBoard.board):
             if all(val == 0 for val in row):
@@ -696,10 +706,56 @@ class evaluator():
             else:
                 height += 1
         return height
-    
-    def sef1(self):
-        self.currentData.currentBoard.board = self.projectPieces()
-        return self.sef0()
+        
+    #aggregate height
+    def sef2(self):
+        total = 0
+        colHeight = 0
+        for x in range(len(self.currentData.currentBoard.board[0])):
+            for y in reversed(range(len(self.currentData.currentBoard.board))):
+                if self.currentData.currentBoard.board[y][x] != 0:
+                    colHeight = len(self.currentData.currentBoard.board) - y
+            total += colHeight
+            colHeight = 0
+        return total
 
-testGame = tetrisGame()
-testGame.run()
+    #number of lines
+    def sef3(self):
+        total = 0
+        for x in self.currentData.currentBoard.board:
+            if 0 not in x:
+                total += 1
+        return total
+
+    #Number of holes
+    def sef4(self):
+        total = 0
+        holes = 0
+
+        for x in range(len(self.currentData.currentBoard.board[0])):
+            for y in reversed(range(len(self.currentData.currentBoard.board))):
+                if self.currentData.currentBoard.board[y][x] == 0:
+                    holes += 1
+                if self.currentData.currentBoard.board[y][x] != 0:
+                    total += holes
+                    holes = 0
+            holes = 0
+        return total
+
+    #Bumpiness
+    def sef5(self):
+        total = 0
+        colHeight = 0
+        prevColHeight = 0
+        for x in range(len(self.currentData.currentBoard.board[0])):
+            for y in reversed(range(len(self.currentData.currentBoard.board))):
+                if self.currentData.currentBoard.board[y][x] != 0:
+                    colHeight = len(self.currentData.currentBoard.board) - y
+            print(colHeight)
+            total += (colHeight - prevColHeight)
+            prevColHeight = colHeight
+            colHeight = 0
+        return total
+
+#testGame = tetrisGame()
+#testGame.run()
