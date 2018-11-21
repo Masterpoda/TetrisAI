@@ -541,6 +541,7 @@ class moveProvider():
         return 'NONE'
     
     def AIMove(self):
+        #parse Key moves even when running AI (useful for toggling display, changing speed, etc.)
         for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     for key in self.key_actions:
@@ -760,6 +761,23 @@ class evaluator():
             prevColHeight = colHeight
             colHeight = 0
         return total
+
+
+class AIPlayer():
+
+    #returns a move based on game state
+    def chooseMove(self, tData):
+        None
+    
+    # generates scores for all potential game states a certain number of moves in the future
+    # depth = 0 scores the game states with all pieces progressed to 
+    def scoreMoves(self, depth):
+        None
+    
+    #move piece to left and right max in all different orientations to find best one.
+    #only guaranteed to find best when 1 piece is in play.
+    def bruteForceBest(self, tetrisData):
+        None
 
 #testGame = tetrisGame()
 #testGame.run()
