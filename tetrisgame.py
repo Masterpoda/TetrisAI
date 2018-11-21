@@ -667,19 +667,19 @@ class evaluator():
 
     def evaluate(self, tData = None):
         sefs = {
-            0 : self.sef0(),
-            1 : self.sef1(),
-            2 : self.sef2(),
-            3 : self.sef3(),
-            4 : self.sef4(),
-            5 : self.sef5()
+            0 : self.sef0,
+            1 : self.sef1,
+            2 : self.sef2,
+            3 : self.sef3,
+            4 : self.sef4,
+            5 : self.sef5
         }
 
-        if tData == None:
+        if tData != None:
             self.currentData = tData
 
 
-        return sefs[self.currentSef]
+        return sefs[self.currentSef]()
 
     #return a duplicate of the gameboard where every piece is projected downward
     def projectPieces(self):
@@ -695,7 +695,10 @@ class evaluator():
     #amalgam of sefs with projected pieces and weighted combinations
     def sef0(self):
         self.currentData.currentBoard.board = self.projectPieces()
-        return self.sef2() * -0.510066 + self.sef3() * 0.760666
+
+        #scores and weights of each function found via genetic algorithm given by Yiyuan Lee at:
+        #https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/
+        return self.sef2() * -0.510066 + self.sef3() * 0.760666 + self.sef4() * -0.35663 + self.sef5() * -0.184483
 
     #Board height
     def sef1(self):
@@ -747,12 +750,13 @@ class evaluator():
         total = 0
         colHeight = 0
         prevColHeight = 0
-        for x in range(len(self.currentData.currentBoard.board[0])):
-            for y in reversed(range(len(self.currentData.currentBoard.board))):
+        xRange = len(self.currentData.currentBoard.board[0])
+        yRange = len(self.currentData.currentBoard.board)
+        for x in range(xRange):
+            for y in reversed(range(yRange)):
                 if self.currentData.currentBoard.board[y][x] != 0:
-                    colHeight = len(self.currentData.currentBoard.board) - y
-            print(colHeight)
-            total += (colHeight - prevColHeight)
+                    colHeight = yRange - y
+            total += abs(colHeight - prevColHeight)
             prevColHeight = colHeight
             colHeight = 0
         return total
