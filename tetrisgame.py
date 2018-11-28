@@ -5,11 +5,11 @@ from random import randrange as rand
 
 default_config = {
 	'cell_size':	10,
-	'cols':		    5,
+	'cols':		    20,
 	'rows':		    20,
 	'delay':	    750,
 	'maxfps':	    30,
-    'numPieces':    80
+    'numPieces':    5
     }
 
 colors = [
@@ -80,7 +80,11 @@ class tetrisPiece():
     def negatePiece(self):
         return [[val*-1 for val in row] for row in self.pieceShape]
 
-
+    def testEquivalent(self, givenPiece):
+        if givenPiece.piece_x == self.piece_x and givenPiece.piece_y == self.piece_y and givenPiece.pieceShape == self.pieceShape:
+            return True
+        return False
+        
 class tetrisBoard():
 
     board = []
@@ -185,9 +189,6 @@ class tetrisBoard():
         for y, row in enumerate(self.collList):
             for x, item in enumerate(row):
                 self.collList[y][x] += self.board[y][x]
-
-        if pieceList == None:
-            pieceList = self.pieceList
 
         for piece in pieceList:
             self.collList = self.join_matrixes(self.collList, piece.pieceShape, (piece.piece_x, piece.piece_y))
@@ -300,7 +301,14 @@ class tetrisData():
         for row in listBoard:
             print(row)
         print('\n\n')
-        
+
+    #return piece from list that matches given piece
+    def getPieceMatch(self, givenPiece):
+        for piece in self.pieceList:
+            if piece.testEquivalent(givenPiece):
+                return piece
+        return None
+
 #draws tetris game and relevant info
 class tetrisView():
     boardMargin = 10
@@ -519,12 +527,6 @@ class moveProvider():
 			'p',
 			'SPACE'
 		}
-    AIActions = [
-        'LEFT',
-        'RIGHT',
-        'DOWN',
-        'UP'
-    ]
 
     def keyboardMove(self):
         while 1:
@@ -540,18 +542,193 @@ class moveProvider():
                     return 'DOWN'
         return 'NONE'
     
-    def AIMove(self):
-        #parse Key moves even when running AI (useful for toggling display, changing speed, etc.)
-        for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    for key in self.key_actions:
-                        if event.key == eval("pygame.K_"+key):
-                            if key == 'ESCAPE':
-                                return key
-                        elif event.type == pygame.QUIT:
-                            sys.quit()
-        action = self.AIActions[rand(4)]
-        return action
+#evaluates game states
+class evaluator():
+    currentSef = 0
+    tempData = tetrisData()
+    currentData = []
+
+    def __init__(self, sef = None, tData = None):
+        if sef != None:
+            self.currentSef = sef
+        if tData != None:
+            self.currentData = tData
+
+    def evaluate(self, tData = None):
+        sefs = {
+            0 : self.sef0,
+            1 : self.sef1,
+            2 : self.sef2,
+            3 : self.sef3,
+            4 : self.sef4,
+            5 : self.sef5
+        }
+
+        if tData != None:
+            self.currentData = tData
+
+
+        return sefs[self.currentSef]()
+
+    #return a duplicate of the gameboard where every piece is projected downward
+    def projectPieces(self):
+        tempGame = tetrisGame(self.currentData.config)
+        tempGame.manual = True
+        tempGame.display = False
+        tempGame.gameData = copy.deepcopy(self.currentData)
+        while tempGame.gameData.pieceList != []:
+            tempGame.drop()
+
+        return tempGame.gameData.currentBoard.board
+
+    def getSefData(self, tData):
+        if tData == None:
+            return self.currentData
+        else:
+            return tData
+
+    #amalgam of sefs with projected pieces and weighted combinations
+    def sef0(self):
+        self.tempData.currentBoard.board = self.projectPieces()
+        #self.currentData.printListBoard()
+
+        #scores and weights of each function found via genetic algorithm given by Yiyuan Lee at:
+        #https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/
+        return self.sef2(self.tempData) * -0.510066 + self.sef3(self.tempData) * 0.760666 + self.sef4(self.tempData) * -0.35663 + self.sef5(self.tempData) * -0.184483
+
+    #Board height
+    def sef1(self, tData = None):
+        sefData = self.getSefData(tData)
+        height = 0
+        for row in reversed(sefData.currentBoard.board):
+            if all(val == 0 for val in row):
+                return height
+            else:
+                height += 1
+        return height
+        
+    #aggregate height
+    def sef2(self, tData = None):
+        sefData = self.getSefData(tData)
+        total = 0
+        colHeight = 0
+        for x in range(len(sefData.currentBoard.board[0])):
+            for y in reversed(range(len(sefData.currentBoard.board))):
+                if sefData.currentBoard.board[y][x] != 0:
+                    colHeight = len(sefData.currentBoard.board) - y
+            total += colHeight
+            colHeight = 0
+        return total
+
+    #number of lines
+    def sef3(self, tData = None):
+        sefData = self.getSefData(tData)
+        total = 0
+        for x in sefData.currentBoard.board:
+            if 0 not in x:
+                total += 1
+        return total
+
+    #Number of holes
+    def sef4(self, tData = None):
+        sefData = self.getSefData(tData)
+        total = 0
+        holes = 0
+        for x in range(len(sefData.currentBoard.board[0])):
+            for y in reversed(range(len(sefData.currentBoard.board))):
+                if sefData.currentBoard.board[y][x] == 0:
+                    holes += 1
+                if sefData.currentBoard.board[y][x] != 0:
+                    total += holes
+                    holes = 0
+            holes = 0
+        return total
+
+    #Bumpiness
+    def sef5(self, tData = None):
+        sefData = self.getSefData(tData)
+        total = 0
+        colHeight = 0
+        prevColHeight = 0
+        xRange = len(sefData.currentBoard.board[0])
+        yRange = len(sefData.currentBoard.board)
+        for x in range(xRange):
+            for y in reversed(range(yRange)):
+                if sefData.currentBoard.board[y][x] != 0:
+                    colHeight = yRange - y
+            total += abs(colHeight - prevColHeight)
+            prevColHeight = colHeight
+            colHeight = 0
+        return total
+
+#Makes moves autonomously
+class AIPlayer():
+
+    AIActions = [
+        'LEFT',
+        'RIGHT',
+        'DOWN',
+        'UP'
+    ]
+
+    scoreEval = evaluator(0)
+    controller = pieceController()
+
+    #returns a move based on game state, searchning to a particular depth
+    #TODO: Search deeper than 1
+    def chooseMove(self, piece, tData, depth = 1):
+        evaluatedStates = dict()
+        statesToEvaluate = [tData.generateListBoard()]
+        currentDepth = 0
+        controller = pieceController()
+
+        if piece not in tData.pieceList:
+            return None
+        
+        if len(tData.pieceList) > 1:
+            controller.getMovesMultipiece(piece, tData.pieceList, tData.currentBoard)
+        else:
+            controller.getMoves(piece, tData.currentBoard)
+
+        bestScore = -100000
+        bestMove = 'NONE'
+        for move, value in controller.possibleMoves.items():
+            if value:
+                score = self.scoreSingleMove(tData, piece, move)[0]
+                if score > bestScore:
+                    bestScore = score
+                    bestMove = move
+
+        return bestMove
+
+
+    def scoreSingleMove(self, tData, piece, move):
+        self.scoreEval.currentData = tData
+        if piece not in tData.pieceList:
+            return self.scoreEval.evaluate(tData), tData
+        
+        if len(tData.pieceList) > 1:
+            self.controller.getMovesMultipiece(piece, tData.pieceList, tData.currentBoard)
+        else:
+            self.controller.getMoves(piece, tData.currentBoard)
+        
+        if not self.controller.possibleMoves[move]:
+            return self.scoreEval.evaluate(tData), tData
+        
+        dataCopy = copy.deepcopy(tData)
+        pieceCopy = dataCopy.getPieceMatch(piece)
+        self.controller.applyMove(pieceCopy, dataCopy.currentBoard, move)
+
+        return self.scoreEval.evaluate(dataCopy), dataCopy
+
+    def makeRandomMove(self):
+        return self.AIActions[rand(4)]
+    
+    
+    #move piece to left and right max in all different orientations to find best one.
+    #only guaranteed to find best when 1 piece is in play.
+    def bruteForceBest(self, tetrisData):
+        None
 
 #Manages progression of entire game
 class tetrisGame():
@@ -565,6 +742,12 @@ class tetrisGame():
     display = True
     manual = False
     dont_burn_my_cpu = pygame.time.Clock()
+    maxNDM = 3
+
+    #counts how many Non-down moves each piece made
+    moveCounter = dict()
+
+    autoPlayer = AIPlayer()
 
     def __init__(self, config = None):
         if config != None:
@@ -605,34 +788,49 @@ class tetrisGame():
             if self.manual:
                 command = self.mover.keyboardMove()
             else:
-                command = self.mover.AIMove()
+                command = self.autoPlayer.chooseMove(piece, self.gameData)
+                #command = self.autoPlayer.makeRandomMove()
+                if self.processKeyInput() == 'ESCAPE':
+                    command = 'ESCAPE'
                 #get command from AI controller
             
             if command == 'ESCAPE':
                 sys.exit()
 
             if command != 'NONE':
-                if self.config['numPieces'] > 1:
+                if len(self.gameData.pieceList) > 1:
                     self.controller.getMovesMultipiece(piece, self.gameData.pieceList, self.gameData.currentBoard)
                 else:
                     self.controller.getMoves(piece, self.gameData.currentBoard)
 
+                if piece in self.moveCounter:
+                    self.moveCounter[piece] += 1
+                else:
+                    self.moveCounter[piece] = 0
+
+                if command == 'DOWN':
+                    self.moveCounter[piece] = 0
+                elif self.moveCounter[piece] > self.maxNDM:
+                    self.moveCounter[piece] = 0
+                    command = 'DOWN'
+
                 if command == 'DOWN' and not self.controller.possibleMoves['DOWN']:
                     #land piece
                     #keeps pieces from landing because of downward facing multi-piece collision
-                    if self.config['numPieces'] > 1:
+                    if len(self.gameData.pieceList) > 1:
                         self.controller.getMoves(piece, self.gameData.currentBoard)
                         if not self.controller.possibleMoves['DOWN']:
                             self.gameData.landPiece(piece)
                     else:
                         self.gameData.landPiece(piece)
+                        del self.moveCounter[piece]
                 else:
                     self.controller.applyMove(piece, self.gameData.currentBoard, command)
 
     #only used for AI projections of pieces
     def drop(self):
         for piece in self.gameData.pieceList:
-            if self.config['numPieces'] > 1:
+            if len(self.gameData.pieceList) > 1:
                 self.controller.getMovesMultipiece(piece, self.gameData.pieceList, self.gameData.currentBoard)
             else:
                 self.controller.getMoves(piece, self.gameData.currentBoard)
@@ -640,7 +838,7 @@ class tetrisGame():
             if not self.controller.possibleMoves['DOWN']:
                 #land piece
                 #keeps pieces from landing because of downward facing multi-piece collision
-                if self.config['numPieces'] > 1:
+                if len(self.gameData.pieceList) > 1:
                     self.controller.getMoves(piece, self.gameData.currentBoard)
                     if not self.controller.possibleMoves['DOWN']:
                         self.gameData.landPiece(piece)
@@ -649,135 +847,22 @@ class tetrisGame():
             else:
                 self.controller.applyMove(piece, self.gameData.currentBoard, 'DOWN')
                 
-            
+    def processKeyInput(self):
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                for key in self.mover.key_actions:
+                    if event.key == eval("pygame.K_"+key):
+                        return key
+                    elif event.type == pygame.QUIT:
+                        sys.quit()
+        return 'NONE'
+                        
 
     def resetGame(self):
         self.gameData = tetrisData()
         self.gameOver = False
 
-class evaluator():
-    currentSef = 0
 
-    currentData = []
-
-    def __init__(self, sef = None, tData = None):
-        if sef != None:
-            self.currentSef = sef
-        if tData != None:
-            self.currentData = tData
-
-    def evaluate(self, tData = None):
-        sefs = {
-            0 : self.sef0,
-            1 : self.sef1,
-            2 : self.sef2,
-            3 : self.sef3,
-            4 : self.sef4,
-            5 : self.sef5
-        }
-
-        if tData != None:
-            self.currentData = tData
-
-
-        return sefs[self.currentSef]()
-
-    #return a duplicate of the gameboard where every piece is projected downward
-    def projectPieces(self):
-        tempGame = tetrisGame(self.currentData.config)
-        tempGame.manual = True
-        tempGame.display = False
-        tempGame.gameData = copy.deepcopy(self.currentData)
-        while tempGame.gameData.pieceList != []:
-            tempGame.drop()
-
-        return tempGame.gameData.currentBoard.board
-
-    #amalgam of sefs with projected pieces and weighted combinations
-    def sef0(self):
-        self.currentData.currentBoard.board = self.projectPieces()
-
-        #scores and weights of each function found via genetic algorithm given by Yiyuan Lee at:
-        #https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/
-        return self.sef2() * -0.510066 + self.sef3() * 0.760666 + self.sef4() * -0.35663 + self.sef5() * -0.184483
-
-    #Board height
-    def sef1(self):
-        height = 0
-        for row in reversed(self.currentData.currentBoard.board):
-            if all(val == 0 for val in row):
-                return height
-            else:
-                height += 1
-        return height
-        
-    #aggregate height
-    def sef2(self):
-        total = 0
-        colHeight = 0
-        for x in range(len(self.currentData.currentBoard.board[0])):
-            for y in reversed(range(len(self.currentData.currentBoard.board))):
-                if self.currentData.currentBoard.board[y][x] != 0:
-                    colHeight = len(self.currentData.currentBoard.board) - y
-            total += colHeight
-            colHeight = 0
-        return total
-
-    #number of lines
-    def sef3(self):
-        total = 0
-        for x in self.currentData.currentBoard.board:
-            if 0 not in x:
-                total += 1
-        return total
-
-    #Number of holes
-    def sef4(self):
-        total = 0
-        holes = 0
-
-        for x in range(len(self.currentData.currentBoard.board[0])):
-            for y in reversed(range(len(self.currentData.currentBoard.board))):
-                if self.currentData.currentBoard.board[y][x] == 0:
-                    holes += 1
-                if self.currentData.currentBoard.board[y][x] != 0:
-                    total += holes
-                    holes = 0
-            holes = 0
-        return total
-
-    #Bumpiness
-    def sef5(self):
-        total = 0
-        colHeight = 0
-        prevColHeight = 0
-        xRange = len(self.currentData.currentBoard.board[0])
-        yRange = len(self.currentData.currentBoard.board)
-        for x in range(xRange):
-            for y in reversed(range(yRange)):
-                if self.currentData.currentBoard.board[y][x] != 0:
-                    colHeight = yRange - y
-            total += abs(colHeight - prevColHeight)
-            prevColHeight = colHeight
-            colHeight = 0
-        return total
-
-
-class AIPlayer():
-
-    #returns a move based on game state
-    def chooseMove(self, tData):
-        None
-    
-    # generates scores for all potential game states a certain number of moves in the future
-    # depth = 0 scores the game states with all pieces progressed to 
-    def scoreMoves(self, depth):
-        None
-    
-    #move piece to left and right max in all different orientations to find best one.
-    #only guaranteed to find best when 1 piece is in play.
-    def bruteForceBest(self, tetrisData):
-        None
 
 #testGame = tetrisGame()
 #testGame.run()

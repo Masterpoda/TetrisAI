@@ -527,7 +527,18 @@ class TetrisBoardTests(unittest.TestCase):
 
 
 class tetrisDataTests(unittest.TestCase):
-    None
+    def test_testPieceMatch(self):
+        tp_1 = tetrisPiece(0, [[1,1,0],[0,1,1]])
+        tp_2 = tetrisPiece(4, [[1,1,1,1]])
+        tp_3 = copy.deepcopy(tp_1)
+        testData = tetrisData()
+        testData.pieceList = [tp_1, tp_2]
+        expected = tp_1
+
+        actual = testData.getPieceMatch(tp_3)
+
+        self.assertNotEqual(actual, tp_3)
+        self.assertEqual(actual, expected)
     
 class PieceControllerTests(unittest.TestCase):
     def test_testGetMoves_1(self):
@@ -846,6 +857,56 @@ class staticEvaluationFunctionTest(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
+    def test_testProjectPieces_4(self):
+        testPiece_1 = tetrisPiece(0, [[1,1]])
+        testPiece_2 = tetrisPiece(0, [[1,1]])
+        testPiece_2.piece_y = 1
+        testBoard_1 = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0],
+            [1,0,0]
+        ]
+        testBoard_2 = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0],
+            [1,0,0]
+        ]
+        testData_1 = tetrisData()
+        testData_2 = tetrisData()
+        testData_1.pieceList = [testPiece_1]
+        testData_2.pieceList = [testPiece_2]
+        testData_1.currentBoard.board = testBoard_1
+        testData_2.currentBoard.board = testBoard_2
+        testEvaluator_1 = evaluator(0, testData_1)
+        testEvaluator_2 = evaluator(0, testData_2)
+        
+        pieceHighBoard = testEvaluator_1.projectPieces()
+        pieceLowBoard = testEvaluator_2.projectPieces()
+
+        self.assertEqual(pieceLowBoard, pieceHighBoard)
+
+    def test_testProjectPieces_5(self):
+        testPiece_1 = tetrisPiece(0, [[1,1]])
+        testPiece_2 = tetrisPiece(2, [[1]])
+        testBoard_1 = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0],
+            [1,0,0]
+        ]
+        testData_1 = tetrisData()
+        testData_1.pieceList = [testPiece_1,testPiece_2]
+        testData_1.currentBoard.board = testBoard_1
+        testEvaluator_1 = evaluator(0, testData_1)
+        expected = copy.deepcopy(testEvaluator_1.currentData.currentBoard.board)    
+
+        testEvaluator_1.projectPieces()
+        actual = testEvaluator_1.currentData.currentBoard.board
+
+        self.assertEqual(actual, expected)
+
     def test_testSEF1_1(self):
         testData = tetrisData()
         testBoard = [
@@ -976,5 +1037,124 @@ class staticEvaluationFunctionTest(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
+
+class EvaluatorTests(unittest.TestCase):
+    def test_testEvaluateDoesntMutate(self):
+        testPiece = tetrisPiece(0, [[1,1]])
+        testBoard = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0],
+            [1,0,0]
+        ]
+        testData = tetrisData()
+        testData.pieceList = [testPiece]
+        testData.currentBoard.board = testBoard
+        datacopy = copy.deepcopy(testData)
+        piececopy = copy.deepcopy(testPiece)
+        testEvaluator = evaluator(0, testData)
+
+        testEvaluator.evaluate()
+
+        self.assertEqual(datacopy.currentBoard.board, testData.currentBoard.board)
+        self.assertEqual(piececopy.pieceShape, piececopy.pieceShape)
+
+class AIPlayerTests(unittest.TestCase):
+    def test_testSingleMoveEval_1(self):
+        testPiece = tetrisPiece(0, [[1,1]])
+        testBoard = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0],
+            [1,0,0]
+        ]
+        testData = tetrisData()
+        testData.pieceList = [testPiece]
+        testData.currentBoard.board = testBoard
+        player = AIPlayer()
+        
+        
+        goodmove = player.scoreSingleMove(testData, testPiece, 'RIGHT')[0]
+        badmove = player.scoreSingleMove(testData, testPiece, 'DOWN')[0]
+
+        self.assertGreater(goodmove, badmove)
+
+    def test_testSingleMoveEval_2(self):
+        testPiece = tetrisPiece(0, [[1,1]])
+        testBoard = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0],
+            [1,0,0]
+        ]
+        testData = tetrisData()
+        testData.pieceList = [testPiece]
+        testData.currentBoard.board = testBoard
+        player = AIPlayer()
+
+        goodmove = player.scoreSingleMove(testData, testPiece, 'LEFT')[0]
+        badmove = player.scoreSingleMove(testData, testPiece, 'DOWN')[0]
+
+        self.assertEqual(goodmove, badmove)
+
+    def test_testSingleMoveEval_3(self):
+        testPiece = tetrisPiece(0, [[1,1]])
+        testBoard = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0],
+            [1,0,0]
+        ]
+        testData = tetrisData()
+        testData.pieceList = [testPiece]
+        testData.currentBoard.board = testBoard
+        player = AIPlayer()
+
+        datacopy = copy.deepcopy(testData)
+        piececopy = copy.deepcopy(testPiece)
+        player.scoreSingleMove(testData, testPiece, 'LEFT')
+        player.scoreSingleMove(testData, testPiece, 'DOWN')
+
+        self.assertEqual(datacopy.currentBoard.board, testData.currentBoard.board)
+        self.assertEqual(piececopy.pieceShape, piececopy.pieceShape)
+
+    def test_testSingleMoveEval_4(self):
+        testPiece = tetrisPiece(0, [[1,1]])
+        testBoard = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0],
+            [1,0,0]
+        ]
+        testData = tetrisData()
+        testData.pieceList = [testPiece]
+        testData.currentBoard.board = testBoard
+        player = AIPlayer()
+
+        datacopy = copy.deepcopy(testData)
+        player.chooseMove(testPiece, testData, 1)
+
+        self.assertEqual(len(datacopy.pieceList), len(testData.pieceList))
+
+        for index, piece in enumerate(testData.pieceList):
+            self.assertTrue(piece.testEquivalent(datacopy.pieceList[index]))
+    
+    def test_testChooseMove_1(self):
+        testPiece = tetrisPiece(0, [[1,1]])
+        testBoard = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0],
+            [1,0,0]
+        ]
+        testData = tetrisData()
+        testData.pieceList = [testPiece]
+        testData.currentBoard.board = testBoard
+        player = AIPlayer()
+        expected = 'RIGHT'
+        
+        actual = player.chooseMove(testPiece, testData, 1)
+
+        self.assertEqual(expected, actual)
     
 unittest.main()
